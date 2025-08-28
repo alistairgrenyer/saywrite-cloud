@@ -96,7 +96,12 @@ class SQLAlchemyUserRepository(UserRepositoryInterface):
         result = await self.db.execute(select(UserModel).filter(UserModel.id == user_id))
         db_user = result.scalar_one_or_none()
         if db_user:
-            db_user(**user_data.model_dump(exclude_unset=True))
+            # Only update allowed mutable fields
+            payload = user_data.model_dump(exclude_unset=True)
+            allowed_fields = {"email", "is_active", "refresh_token"}
+            for field in allowed_fields:
+                if field in payload:
+                    setattr(db_user, field, payload[field])
             await self.db.commit()
             await self.db.refresh(db_user)
             return self._model_to_schema(db_user)
