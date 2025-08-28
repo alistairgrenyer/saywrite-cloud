@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import Mock
 from app.services.auth.user_service import UserService
 from app.repositories.user_repository import UserRepositoryInterface
-from app.models.schemas import User, UserCreate
+from app.models.api.schemas import User, UserCreate
 
 
 class MockUserRepository(UserRepositoryInterface):

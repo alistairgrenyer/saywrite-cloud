@@ -1,17 +1,17 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import verify_token
 from app.services.auth.user_service import UserService
 from app.repositories.user_repository import SQLAlchemyUserRepository
-from app.models.database import get_db
-from app.models.schemas import User
+from app.core.database import get_db
+from app.models.api.schemas import User
 
 # Security scheme
 security = HTTPBearer()
 
 
-def get_user_service(db: Session = Depends(get_db)) -> UserService:
+def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
     """Get user service with injected repository."""
     user_repository = SQLAlchemyUserRepository(db)
     return UserService(user_repository)
@@ -29,7 +29,7 @@ async def get_current_user(
     )
     
     token_data = verify_token(credentials.credentials, credentials_exception)
-    user = user_service.get_user_by_email(email=token_data.email)
+    user = await user_service.get_user_by_email(email=token_data.email)
     
     if user is None:
         raise credentials_exception

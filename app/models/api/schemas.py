@@ -12,9 +12,8 @@ class TranscribeResponse(BaseModel):
     text: str
 
 
-class Glossary(Dict[str, str]):
-    """Type for glossary mapping terms to definitions."""
-    pass
+# Use a type alias instead of subclassing Dict so Pydantic v2 can generate a schema
+Glossary = Dict[str, str]
 
 
 class Profile(BaseModel):

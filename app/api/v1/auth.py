@@ -1,9 +1,9 @@
 from datetime import timedelta
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from app.models.schemas import UserCreate, UserLogin, User, Token
+from app.models.api import UserCreate, UserLogin, User, Token
 from app.services.auth.user_service import UserService
-from app.core.auth import create_access_token
+from app.core.auth import create_access_token, create_refresh_token, verify_refresh_token
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.dependencies import get_user_service
@@ -32,7 +32,7 @@ async def register(
     logger.info("User registration attempt", email=user_data.email)
     
     try:
-        user = user_service.create_user(user_data)
+        user = await user_service.create_user(user_data)
         logger.info("User registered successfully", user_id=user.id, email=user.email)
         return user
     except ValueError as e:
@@ -59,7 +59,7 @@ async def login(
     """
     logger.info("User login attempt", email=user_data.email)
     
-    user = user_service.authenticate_user(user_data.email, user_data.password)
+    user = await user_service.authenticate_user(user_data.email, user_data.password)
     if not user:
         logger.warning("Login failed - invalid credentials", email=user_data.email)
         raise HTTPException(
@@ -72,9 +72,14 @@ async def login(
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+
+    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_token = create_refresh_token(
+        data={"sub": user.email}, expires_delta=refresh_token_expires
+    )
     
     logger.info("User logged in successfully", user_id=user.id, email=user.email)
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer", expires_in=access_token_expires.total_seconds())
 
 
 @router.post("/token", response_model=Token, tags=["auth"])
@@ -93,7 +98,7 @@ async def login_for_access_token(
     """
     logger.info("OAuth2 token request", username=form_data.username)
     
-    user = user_service.authenticate_user(form_data.username, form_data.password)
+    user = await user_service.authenticate_user(form_data.username, form_data.password)
     if not user:
         logger.warning("OAuth2 login failed - invalid credentials", username=form_data.username)
         raise HTTPException(
@@ -108,4 +113,41 @@ async def login_for_access_token(
     )
     
     logger.info("OAuth2 token issued successfully", user_id=user.id, email=user.email)
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_type="bearer", expires_in=access_token_expires.total_seconds())
+
+
+@router.post("/refresh_token", response_model=Token, tags=["auth"])
+async def refresh_token(
+    refresh_token: str,
+    user_service: UserService = Depends(get_user_service)
+) -> Token:
+    """
+    Refresh JWT access token using a refresh token.
+    
+    Args:
+        refresh_token: Refresh token
+        
+    Returns:
+        Token: JWT access token
+    """
+    logger.info("Refresh token request", refresh_token=refresh_token)
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    token_data = verify_refresh_token(refresh_token, credentials_exception)
+    user = await user_service.get_user_by_email(email=token_data.email)
+    if not user:
+        logger.warning("Refresh token failed - invalid credentials", email=token_data.email)
+        raise credentials_exception
+        
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+
+    logger.info("Refreshed access token issued successfully", user_id=user.id, email=user.email)
+    return Token(access_token=access_token, token_type="bearer", expires_in=access_token_expires.total_seconds())

@@ -5,7 +5,7 @@ import tempfile
 import os
 from pathlib import Path
 
-from app.models.schemas import (
+from app.models.api import (
     HealthResponse,
     TranscribeResponse,
     RewriteRequest,
