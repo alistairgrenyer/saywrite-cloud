@@ -24,3 +24,7 @@ class UserService:
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID."""
         return await self.user_repository.get_user_by_id(user_id)
+
+    async def update_user(self, user_id: str, user_data: User) -> Optional[User]:
+        """Update user by ID."""
+        return await self.user_repository.update_user(user_id, user_data)

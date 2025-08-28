@@ -77,6 +77,9 @@ async def login(
     refresh_token = create_refresh_token(
         data={"sub": user.email}, expires_delta=refresh_token_expires
     )
+
+    user.refresh_token = refresh_token
+    await user_service.update_user(user.id, user)
     
     logger.info("User logged in successfully", user_id=user.id, email=user.email)
     return TokenRefresh(access_token=access_token, refresh_token=refresh_token, token_type="bearer", expires_in=access_token_expires.total_seconds())
@@ -142,6 +145,9 @@ async def refresh_token(
     user = await user_service.get_user_by_email(email=token_data.email)
     if not user:
         logger.warning("Refresh token failed - invalid credentials", email=token_data.email)
+        raise credentials_exception
+    if user.refresh_token != refresh_token:
+        logger.warning("Refresh token failed - invalid refresh token", email=token_data.email)
         raise credentials_exception
         
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

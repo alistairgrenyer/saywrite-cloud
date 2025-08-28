@@ -32,6 +32,11 @@ class UserRepositoryInterface(ABC):
         """Authenticate user by email and password."""
         pass
 
+    @abstractmethod
+    async def update_user(self, user_id: str, user_data: User) -> Optional[User]:
+        """Update user by ID."""
+        pass
+
 
 class SQLAlchemyUserRepository(UserRepositoryInterface):
     """SQLAlchemy implementation of user repository."""
@@ -83,6 +88,17 @@ class SQLAlchemyUserRepository(UserRepositoryInterface):
         result = await self.db.execute(select(UserModel).filter(UserModel.email == email))
         db_user = result.scalar_one_or_none()
         if db_user and verify_password(password, db_user.hashed_password):
+            return self._model_to_schema(db_user)
+        return None
+
+    async def update_user(self, user_id: str, user_data: User) -> Optional[User]:
+        """Update user by ID."""
+        result = await self.db.execute(select(UserModel).filter(UserModel.id == user_id))
+        db_user = result.scalar_one_or_none()
+        if db_user:
+            db_user(**user_data.model_dump(exclude_unset=True))
+            await self.db.commit()
+            await self.db.refresh(db_user)
             return self._model_to_schema(db_user)
         return None
     

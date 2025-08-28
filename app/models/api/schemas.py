@@ -72,6 +72,7 @@ class User(BaseModel):
     email: str
     is_active: bool = True
     created_at: str
+    refresh_token: Optional[str] = None
 
 
 class Token(BaseModel):
