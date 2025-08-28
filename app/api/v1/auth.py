@@ -43,11 +43,11 @@ async def register(
         )
 
 
-@router.post("/login", response_model=Token, tags=["auth"])
+@router.post("/login", response_model=TokenRefresh, tags=["auth"])
 async def login(
     user_data: UserLogin,
     user_service: UserService = Depends(get_user_service)
-) -> Token:
+) -> TokenRefresh:
     """
     Login user and return JWT token.
     
