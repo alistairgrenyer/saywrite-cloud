@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y dos2unix && apt-get clean
 COPY ../requirements.txt /app/
 RUN pip install -r requirements.txt
 
-COPY ../src /app/src
+COPY ../app /app/app
 COPY ../alembic.ini /app/
 COPY ../alembic /app/alembic
 
-CMD alembic upgrade head && fastapi run src/main.py --port $PORT
+CMD alembic upgrade head && fastapi run app.main:app --port $PORT
