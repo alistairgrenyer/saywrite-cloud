@@ -13,9 +13,13 @@ A FastAPI-based local service for text rewriting and speech-to-text transcriptio
 
 ## API Endpoints
 
-- `GET /v1/health` - Health check endpoint
-- `POST /v1/transcribe` - Transcribe audio to text using Whisper API
-- `POST /v1/rewrite` - Rewrite text using LLM with profile-based customization
+- `GET /api/v1/health` - Health check endpoint
+- `POST /api/v1/transcribe` - Transcribe audio to text using Whisper API (requires Bearer auth)
+- `POST /api/v1/rewrite` - Rewrite text using LLM with profile-based customization (requires Bearer auth)
+- `POST /api/v1/auth/register` - Register a new user
+- `POST /api/v1/auth/login` - Login with email/password, returns access and refresh tokens
+- `POST /api/v1/auth/token` - OAuth2 Password grant compatible token endpoint
+- `POST /api/v1/auth/refresh_token` - Exchange refresh token for new access token
 
 ## Requirements
 
@@ -88,13 +92,14 @@ docker run -p 5175:5175 --env-file .env saywrite-cloud
 ### Health Check
 
 ```bash
-curl http://localhost:5175/v1/health
+curl http://localhost:5175/api/v1/health
 ```
 
 ### Transcribe Audio
 
 ```bash
-curl -X POST http://localhost:5175/v1/transcribe \
+curl -X POST http://localhost:5175/api/v1/transcribe \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -F "audio=@/path/to/audio/file.mp3" \
   -F "language=en"
 ```
@@ -102,7 +107,8 @@ curl -X POST http://localhost:5175/v1/transcribe \
 ### Rewrite Text
 
 ```bash
-curl -X POST http://localhost:5175/v1/rewrite \
+curl -X POST http://localhost:5175/api/v1/rewrite \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
     "transcript": "This is a test transcript that needs to be rewritten.",
@@ -119,6 +125,44 @@ curl -X POST http://localhost:5175/v1/rewrite \
       "temperature": 0.7
     }
   }'
+```
+
+### Auth
+
+Register:
+
+```bash
+curl -X POST http://localhost:5175/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "StrongPassword123!"
+  }'
+```
+
+Login (email/password):
+
+```bash
+curl -X POST http://localhost:5175/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "StrongPassword123!"
+  }'
+```
+
+OAuth2 token (form-encoded):
+
+```bash
+curl -X POST http://localhost:5175/api/v1/auth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=user@example.com&password=StrongPassword123!"
+```
+
+Refresh access token:
+
+```bash
+curl -X POST "http://localhost:5175/api/v1/auth/refresh_token?refresh_token=<REFRESH_TOKEN>"
 ```
 
 ## License
