@@ -5,9 +5,11 @@ from passlib.context import CryptContext
 from fastapi import HTTPException
 from app.models.api.schemas import TokenData
 from app.core.config import settings
+from fastapi.security import OAuth2PasswordBearer
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 # JWT settings
 ALGORITHM = "HS256"
