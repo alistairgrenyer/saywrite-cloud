@@ -1,7 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from app.models.api import UserCreate, UserLogin, User, Token
+from app.models.api import UserCreate, UserLogin, User, Token, TokenRefresh
 from app.services.auth.user_service import UserService
 from app.core.auth import create_access_token, create_refresh_token, verify_refresh_token
 from app.core.config import settings
@@ -79,7 +79,7 @@ async def login(
     )
     
     logger.info("User logged in successfully", user_id=user.id, email=user.email)
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer", expires_in=access_token_expires.total_seconds())
+    return TokenRefresh(access_token=access_token, refresh_token=refresh_token, token_type="bearer", expires_in=access_token_expires.total_seconds())
 
 
 @router.post("/token", response_model=Token, tags=["auth"])

@@ -1,4 +1,4 @@
-from .schemas import HealthResponse, TranscribeResponse, Glossary, Profile, RewriteOptions, RewriteRequest, UsageMetrics, RewriteResponse, UserCreate, UserLogin, User, Token, TokenData
+from .schemas import HealthResponse, TranscribeResponse, Glossary, Profile, RewriteOptions, RewriteRequest, UsageMetrics, RewriteResponse, UserCreate, UserLogin, User, Token, TokenRefresh, TokenData
 
 __all__ = [
     "HealthResponse",
@@ -13,5 +13,6 @@ __all__ = [
     "UserLogin",
     "User",
     "Token",
+    "TokenRefresh",
     "TokenData",
 ]

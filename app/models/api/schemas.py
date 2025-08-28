@@ -78,6 +78,11 @@ class Token(BaseModel):
     """JWT token response."""
     access_token: str
     token_type: str = "bearer"
+    expires_in: int
+
+class TokenRefresh(Token):
+    """JWT token refresh response."""
+    refresh_token: str
 
 
 class TokenData(BaseModel):
